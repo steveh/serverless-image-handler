@@ -13,7 +13,8 @@ export enum StatusCodes {
 export enum RequestTypes {
   DEFAULT = 'Default',
   CUSTOM = 'Custom',
-  THUMBOR = 'Thumbor'
+  THUMBOR = 'Thumbor',
+  IIIF = 'IIIF'
 }
 
 export enum ImageFormatTypes {

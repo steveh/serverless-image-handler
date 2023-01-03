@@ -7,6 +7,7 @@ import { createHmac } from 'crypto';
 import { DefaultImageRequest, ImageEdits, ImageFormatTypes, ImageHandlerError, ImageHandlerEvent, ImageRequestInfo, Headers, RequestTypes, StatusCodes } from './lib';
 import { SecretProvider } from './secret-provider';
 import { ThumborMapper } from './thumbor-mapper';
+import { IIIFMapper, IIIFMatch } from './iiif-mapper';
 
 type OriginalImageInfo = Partial<{
   contentType: string;
@@ -175,6 +176,12 @@ export class ImageRequest {
       // Use the default image source bucket env var
       const sourceBuckets = this.getAllowedSourceBuckets();
       return sourceBuckets[0];
+    } else if (requestType === RequestTypes.IIIF) {
+      const { rawPath } = event;
+      const match = IIIFMatch.exec(rawPath);
+      const identifier = decodeURIComponent(match.groups.identifier);
+      const [bucket] = identifier.split("/", 1);
+      return bucket;
     } else {
       throw new ImageHandlerError(
         StatusCodes.NOT_FOUND,
@@ -197,6 +204,9 @@ export class ImageRequest {
     } else if (requestType === RequestTypes.THUMBOR) {
       const thumborMapping = new ThumborMapper();
       return thumborMapping.mapPathToEdits(event.rawPath);
+    } else if (requestType === RequestTypes.IIIF) {
+      const iiifMapping = new IIIFMapper();
+      return iiifMapping.mapPathToEdits(event.rawPath);
     } else if (requestType === RequestTypes.CUSTOM) {
       const thumborMapping = new ThumborMapper();
       const parsedPath = thumborMapping.parseCustomPath(event.rawPath);
@@ -244,6 +254,15 @@ export class ImageRequest {
       return decodeURIComponent(rawPath.replace(/\/\d+x\d+:\d+x\d+\/|(?<=\/)\d+x\d+\/|filters:[^/]+|\/fit-in(?=\/)|^\/+/g, '').replace(/^\/+/, ''));
     }
 
+    if (requestType === RequestTypes.IIIF) {
+      const { rawPath } = event;
+      const match = IIIFMatch.exec(rawPath);
+      const identifier = decodeURIComponent(match.groups.identifier);
+      const parts = identifier.split("/");
+      const key = parts.slice(1).join("/")
+      return key;
+    }
+
     // Return an error for all other conditions
     throw new ImageHandlerError(
       StatusCodes.NOT_FOUND,
@@ -280,6 +299,9 @@ export class ImageRequest {
     } else if (definedEnvironmentVariables) {
       // use rewrite function then thumbor mappings
       return RequestTypes.CUSTOM;
+    } else if (IIIFMatch.test(rawPath)) {
+      // use rewrite function then thumbor mappings
+      return RequestTypes.IIIF;
     } else if (matchThumbor.test(rawPath)) {
       // use thumbor mappings
       return RequestTypes.THUMBOR;
@@ -417,21 +439,31 @@ export class ImageRequest {
 
     // Checks signature enabled
     if (ENABLE_SIGNATURE === 'Yes') {
-      const { rawPath, queryStringParameters } = event;
+      const { rawPath, rawQueryString } = event;
 
-      if (!queryStringParameters?.signature) {
+      const query = new URLSearchParams(rawQueryString)
+      const signature = query.get('signature') ?? query.get('sig')
+      if (!signature) {
         throw new ImageHandlerError(StatusCodes.BAD_REQUEST, 'AuthorizationQueryParametersError', 'Query-string requires the signature parameter.');
       }
 
       try {
-        const { signature } = queryStringParameters;
-        const secret = JSON.parse(await this.secretProvider.getSecret(SECRETS_MANAGER));
-        const key = secret[SECRET_KEY];
-        const hash = createHmac('sha256', key).update(rawPath).digest('hex');
+        if (SECRETS_MANAGER ?? '' !== '') {
+          const secret = JSON.parse(await this.secretProvider.getSecret(SECRETS_MANAGER));
+          const key = secret[SECRET_KEY];
+          const hash = createHmac('sha256', key).update(rawPath).digest('hex');
 
-        // Signature should be made with the full path.
-        if (signature !== hash) {
-          throw new ImageHandlerError(StatusCodes.FORBIDDEN, 'SignatureDoesNotMatch', 'Signature does not match.');
+          // Signature should be made with the full path.
+          if (signature !== hash) {
+            throw new ImageHandlerError(StatusCodes.FORBIDDEN, 'SignatureDoesNotMatch', 'Signature does not match.');
+          }
+        } else {
+          const hash = createHmac('sha1', SECRET_KEY).update(rawPath).digest('hex');
+
+          // Signature should be made with the full path.
+          if (signature !== hash) {
+            throw new ImageHandlerError(StatusCodes.FORBIDDEN, 'SignatureDoesNotMatch', 'Signature does not match.');
+          }
         }
       } catch (error) {
         if (error.code === 'SignatureDoesNotMatch') {

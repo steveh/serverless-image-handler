@@ -405,9 +405,7 @@ describe('setup()', () => {
       const event = {
         ...defaultEvent,
         rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
-        queryStringParameters: {
-          signature: '4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
-        }
+        rawQueryString: 'signature=4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
       };
 
       // Mock
@@ -446,7 +444,7 @@ describe('setup()', () => {
       expect(imageRequestInfo).toEqual(expectedResult);
     });
 
-    it('Should throw an error when queryStringParameters are missing', async () => {
+    it('Should throw an error when rawQueryString is missing', async () => {
       // Arrange
       const event = {
         ...defaultEvent,
@@ -471,8 +469,7 @@ describe('setup()', () => {
       // Arrange
       const event = {
         ...defaultEvent,
-        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
-        queryStringParameters: null
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0='
       };
 
       // Act
@@ -494,9 +491,7 @@ describe('setup()', () => {
       const event = {
         ...defaultEvent,
         rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
-        queryStringParameters: {
-          signature: 'invalid'
-        }
+        rawQueryString: 'signature=invalid'
       };
 
       // Mock
@@ -530,9 +525,7 @@ describe('setup()', () => {
       const event = {
         ...defaultEvent,
         rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
-        queryStringParameters: {
-          signature: '4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
-        }
+        rawQueryString: 'signature=4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
       };
 
       // Mock
@@ -877,6 +870,170 @@ describe('setup()', () => {
       expect(imageRequestInfo).toEqual(expectedResult);
     });
   });
+
+  describe('011/iiifImageRequest', () => {
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('Should pass when an IIIF image request is provided and populate the ImageRequest object with the proper values', async () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Mock
+      mockAwsS3.getObject.mockImplementationOnce(() => ({
+        promise() {
+          return Promise.resolve({ Body: Buffer.from('SampleImageContent\n') });
+        }
+      }));
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const imageRequestInfo = await imageRequest.setup(event);
+      const expectedResult = {
+        requestType: 'IIIF',
+        bucket: 'test-storage',
+        key: '42042/e/0/bd97fb-490b-43ca-8087-0dcde6aa3a16/original.tiff',
+        edits: { toFormat: 'jpeg', resize: { width: 880, height: 1024 } },
+        originalImage: Buffer.from('SampleImageContent\n'),
+        cacheControl: 'max-age=31536000,public',
+        contentType: 'image/jpeg',
+        outputFormat: 'jpeg'
+      };
+
+      // Assert
+      expect(mockAwsS3.getObject).toHaveBeenCalledWith({ Bucket: 'test-storage', Key: '42042/e/0/bd97fb-490b-43ca-8087-0dcde6aa3a16/original.tiff' });
+      expect(imageRequestInfo).toEqual(expectedResult);
+    });
+  });
+
+  describe('012/enableSignatureWithSecretKey', () => {
+    const OLD_ENV = process.env;
+
+    beforeAll(() => {
+      process.env.ENABLE_SIGNATURE = 'Yes';
+      process.env.SECRETS_MANAGER = '';
+      process.env.SECRET_KEY = 'b582fe8ed7e29399c1c4f60562c2806efdbb55eeb5678d770a87939dfde2c0262ce1b6ab16fb97a3d2c44d470b9de4a15b81b7db40ecaa532fae9a7005b479e1';
+      process.env.SOURCE_BUCKETS = 'validBucket';
+    });
+
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    afterAll(() => {
+      process.env = OLD_ENV;
+    });
+
+    it('Should pass when the image signature is correct', async () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg',
+        rawQueryString: 'sig=38989d6606252ebe3d43873508afa0f6375c381e'
+      };
+
+      // Mock
+      mockAwsS3.getObject.mockImplementationOnce(() => ({
+        promise() {
+          return Promise.resolve({ Body: Buffer.from('SampleImageContent\n') });
+        }
+      }));
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const imageRequestInfo = await imageRequest.setup(event);
+      const expectedResult = {
+        requestType: 'IIIF',
+        bucket: 'test-storage',
+        key: '42042/e/0/bd97fb-490b-43ca-8087-0dcde6aa3a16/original.tiff',
+        edits: { toFormat: 'jpeg', resize: { width: 880, height: 1024} },
+        outputFormat: 'jpeg',
+        originalImage: Buffer.from('SampleImageContent\n'),
+        cacheControl: 'max-age=31536000,public',
+        contentType: 'image/jpeg'
+      };
+
+      // Assert
+      expect(mockAwsS3.getObject).toHaveBeenCalledWith({ Bucket: 'test-storage', Key: '42042/e/0/bd97fb-490b-43ca-8087-0dcde6aa3a16/original.tiff' });
+      expect(imageRequestInfo).toEqual(expectedResult);
+    });
+
+    it('Should throw an error when rawQueryString is missing', async () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      try {
+        await imageRequest.setup(event);
+      } catch (error) {
+        // Assert
+        expect(error).toMatchObject({
+          status: StatusCodes.BAD_REQUEST,
+          code: 'AuthorizationQueryParametersError',
+          message: 'Query-string requires the signature parameter.'
+        });
+      }
+    });
+
+    it('Should throw an error when the image signature query parameter is missing', async () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      try {
+        await imageRequest.setup(event);
+      } catch (error) {
+        // Assert
+        expect(error).toMatchObject({
+          status: StatusCodes.BAD_REQUEST,
+          message: 'Query-string requires the signature parameter.',
+          code: 'AuthorizationQueryParametersError'
+        });
+      }
+    });
+
+    it('Should throw an error when signature does not match', async () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg',
+        rawQueryString: 'sig=invalid'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      try {
+        await imageRequest.setup(event);
+      } catch (error) {
+        // Assert
+        expect(error).toMatchObject({
+          status: 403,
+          message: 'Signature does not match.',
+          code: 'SignatureDoesNotMatch'
+        });
+      }
+    });
+  });
 });
 
 describe('getOriginalImage()', () => {
@@ -1176,6 +1333,24 @@ describe('parseImageBucket()', () => {
       }
     });
   });
+
+  describe('007/iiifRequestType', () => {
+    it('Should pass if a bucket is specified', () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const result = imageRequest.parseImageBucket(event, RequestTypes.IIIF);
+
+      // Assert
+      const expectedResult = 'test-storage';
+      expect(result).toEqual(expectedResult);
+    });
+  });
 });
 
 describe('parseImageEdits()', () => {
@@ -1282,6 +1457,30 @@ describe('parseImageEdits()', () => {
           message: 'The edits you provided could not be parsed. Please check the syntax of your request and refer to the documentation for additional guidance.'
         });
       }
+    });
+  });
+
+  describe('006/iiifRequestType', () => {
+    it('Should pass if the proper result is returned for a sample IIIF-type image request', () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const result = imageRequest.parseImageEdits(event, RequestTypes.IIIF);
+
+      // Assert
+      const expectedResult = {
+        toFormat: 'jpeg',
+        resize: {
+          width: 880,
+          height: 1024
+        }
+      };
+      expect(result).toEqual(expectedResult);
     });
   });
 });
@@ -1568,6 +1767,24 @@ describe('parseImageKey()', () => {
       }
     });
   });
+
+  describe('008/iiifRequestType', () => {
+    it('Should pass if an image key value is provided in the iiif request format', () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const result = imageRequest.parseImageKey(event, RequestTypes.IIIF);
+
+      // Assert
+      const expectedResult = '42042/e/0/bd97fb-490b-43ca-8087-0dcde6aa3a16/original.tiff';
+      expect(result).toEqual(expectedResult);
+    });
+  });
 });
 
 describe('parseRequestType()', () => {
@@ -1668,6 +1885,24 @@ describe('parseRequestType()', () => {
             'The type of request you are making could not be processed. Please ensure that your original image is of a supported file type (jpg, png, tiff, webp, svg) and that your image request is provided in the correct syntax. Refer to the documentation for additional guidance on forming image requests.'
         });
       }
+    });
+  });
+
+  describe('005/iiifRequestType', () => {
+    it('Should pass if the method detects an IIIF request', () => {
+      // Arrange
+      const event = {
+        ...defaultEvent,
+        rawPath: '/iiif/2/test-storage%2F42042%2Fe%2F0%2Fbd97fb-490b-43ca-8087-0dcde6aa3a16%2Foriginal.tiff/full/!880,1024/0/default.jpg'
+      };
+
+      // Act
+      const imageRequest = new ImageRequest(s3Client, secretProvider);
+      const result = imageRequest.parseRequestType(event);
+
+      // Assert
+      const expectedResult = RequestTypes.IIIF;
+      expect(result).toEqual(expectedResult);
     });
   });
 });
