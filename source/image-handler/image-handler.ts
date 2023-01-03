@@ -37,7 +37,7 @@ export class ImageHandler {
       const modifiedImage = await this.applyEdits(image, edits);
       if (imageRequestInfo.outputFormat !== undefined) {
         if (imageRequestInfo.outputFormat === ImageFormatTypes.WEBP && typeof imageRequestInfo.reductionEffort !== 'undefined') {
-          modifiedImage.webp({ reductionEffort: imageRequestInfo.reductionEffort });
+          modifiedImage.webp({ effort: imageRequestInfo.reductionEffort });
         } else {
           modifiedImage.toFormat(ImageHandler.convertImageFormatType(imageRequestInfo.outputFormat));
         }

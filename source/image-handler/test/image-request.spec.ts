@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { mockAwsS3, mockAwsSecretManager } from './mock';
+import { mockAwsS3, mockAwsSecretManager, defaultEvent } from './mock';
 
 import SecretsManager from 'aws-sdk/clients/secretsmanager';
 import S3 from 'aws-sdk/clients/s3';
@@ -43,7 +43,8 @@ describe('setup()', () => {
     it('Should pass when a default image request is provided and populate the ImageRequest object with the proper values', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsiZ3JheXNjYWxlIjp0cnVlfSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsiZ3JheXNjYWxlIjp0cnVlfSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
       };
       process.env.SOURCE_BUCKETS = 'validBucket, validBucket2';
 
@@ -93,7 +94,8 @@ describe('setup()', () => {
     it('Should pass when a default image request is provided and populate the ImageRequest object with the proper values', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0='
       };
       process.env.SOURCE_BUCKETS = 'validBucket, validBucket2';
 
@@ -141,7 +143,10 @@ describe('setup()', () => {
 
     it('Should pass when a thumbor image request is provided and populate the ImageRequest object with the proper values', async () => {
       // Arrange
-      const event = { path: '/filters:grayscale()/test-image-001.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:grayscale()/test-image-001.jpg'
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
       // Mock
@@ -188,7 +193,10 @@ describe('setup()', () => {
 
     it('Should pass when a thumbor image request is provided and populate the ImageRequest object with the proper values', async () => {
       // Arrange
-      const event = { path: '/filters:format(png)/filters:quality(50)/test-image-001.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:format(png)/filters:quality(50)/test-image-001.jpg'
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
       // Mock
@@ -240,7 +248,8 @@ describe('setup()', () => {
     it('Should pass when a custom image request is provided and populate the ImageRequest object with the proper values', async () => {
       // Arrange
       const event = {
-        path: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg'
+        ...defaultEvent,
+        rawPath: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg'
       };
       process.env = {
         SOURCE_BUCKETS: 'allowedBucket001, allowedBucket002',
@@ -287,7 +296,8 @@ describe('setup()', () => {
     it('Should pass when a custom image request is provided and populate the ImageRequest object with the proper values and no file extension', async () => {
       // Arrange
       const event = {
-        path: '/filters-rotate(90)/filters-grayscale()/custom-image'
+        ...defaultEvent,
+        rawPath: '/filters-rotate(90)/filters-grayscale()/custom-image'
       };
       process.env = {
         SOURCE_BUCKETS: 'allowedBucket001, allowedBucket002',
@@ -351,7 +361,8 @@ describe('setup()', () => {
     it('Should pass when an error is caught', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsiZ3JheXNjYWxlIjp0cnVlfX0='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsiZ3JheXNjYWxlIjp0cnVlfX0='
       };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
@@ -392,7 +403,8 @@ describe('setup()', () => {
     it('Should pass when the image signature is correct', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
         queryStringParameters: {
           signature: '4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
         }
@@ -437,7 +449,8 @@ describe('setup()', () => {
     it('Should throw an error when queryStringParameters are missing', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0='
       };
 
       // Act
@@ -457,7 +470,8 @@ describe('setup()', () => {
     it('Should throw an error when the image signature query parameter is missing', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
         queryStringParameters: null
       };
 
@@ -478,7 +492,8 @@ describe('setup()', () => {
     it('Should throw an error when signature does not match', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
         queryStringParameters: {
           signature: 'invalid'
         }
@@ -513,7 +528,8 @@ describe('setup()', () => {
     it('Should throw an error when any other error occurs', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJwbmcifX0=',
         queryStringParameters: {
           signature: '4d41311006641a56de7bca8abdbda91af254506107a2c7b338a13ca2fa95eac3'
         }
@@ -565,7 +581,8 @@ describe('setup()', () => {
     it('Should return SVG image when no edit is provided for the SVG image', async () => {
       // Arrange
       const event = {
-        path: '/image.svg'
+        ...defaultEvent,
+        rawPath: '/image.svg'
       };
 
       // Mock
@@ -599,7 +616,8 @@ describe('setup()', () => {
     it('Should return WebP image when there are any edits and no output is specified for the SVG image', async () => {
       // Arrange
       const event = {
-        path: '/100x100/image.svg'
+        ...defaultEvent,
+        rawPath: '/100x100/image.svg'
       };
 
       // Mock
@@ -634,7 +652,8 @@ describe('setup()', () => {
     it('Should return JPG image when output is specified to JPG for the SVG image', async () => {
       // Arrange
       const event = {
-        path: '/filters:format(jpg)/image.svg'
+        ...defaultEvent,
+        rawPath: '/filters:format(jpg)/image.svg'
       };
 
       // Mock
@@ -686,7 +705,8 @@ describe('setup()', () => {
     it('Should pass and return the customer headers if custom headers are provided', async () => {
       // Arrange
       const event = {
-        path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiaGVhZGVycyI6eyJDYWNoZS1Db250cm9sIjoibWF4LWFnZT0zMTUzNjAwMCxwdWJsaWMifSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiaGVhZGVycyI6eyJDYWNoZS1Db250cm9sIjoibWF4LWFnZT0zMTUzNjAwMCxwdWJsaWMifSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
       };
       process.env.SOURCE_BUCKETS = 'validBucket, validBucket2';
 
@@ -720,7 +740,8 @@ describe('setup()', () => {
   describe('010/reductionEffort', () => {
     it('Should pass when valid reduction effort is provided and output is webp', async () => {
       const event = {
-        path: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjozfQ=='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjozfQ=='
       };
       process.env.SOURCE_BUCKETS = 'test, validBucket, validBucket2';
 
@@ -754,7 +775,8 @@ describe('setup()', () => {
 
     it('Should pass and use default reduction effort if it is invalid type and output is webp', async () => {
       const event = {
-        path: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjoidGVzdCJ9'
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjoidGVzdCJ9'
       };
       process.env.SOURCE_BUCKETS = 'test, validBucket, validBucket2';
 
@@ -788,7 +810,8 @@ describe('setup()', () => {
 
     it('Should pass and use default reduction effort if it is out of range and output is webp', async () => {
       const event = {
-        path: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjoxMH0='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIiwicmVkdWN0aW9uRWZmb3J0IjoxMH0='
       };
       process.env.SOURCE_BUCKETS = 'test, validBucket, validBucket2';
 
@@ -822,7 +845,8 @@ describe('setup()', () => {
 
     it('Should pass and not use reductionEffort if it is not provided and output is webp', async () => {
       const event = {
-        path: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIn0='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJ0ZXN0Iiwia2V5IjoidGVzdC5wbmciLCJvdXRwdXRGb3JtYXQiOiJ3ZWJwIn0='
       };
       process.env.SOURCE_BUCKETS = 'test, validBucket, validBucket2';
 
@@ -1029,7 +1053,10 @@ describe('parseImageBucket()', () => {
   describe('001/defaultRequestType/bucketSpecifiedInRequest/allowed', () => {
     it('Should pass if the bucket name is provided in the image request and has been allowed in SOURCE_BUCKETS', () => {
       // Arrange
-      const event = { path: '/eyJidWNrZXQiOiJhbGxvd2VkQnVja2V0MDAxIiwia2V5Ijoic2FtcGxlSW1hZ2VLZXkwMDEuanBnIiwiZWRpdHMiOnsiZ3JheXNjYWxlIjoidHJ1ZSJ9fQ==' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJhbGxvd2VkQnVja2V0MDAxIiwia2V5Ijoic2FtcGxlSW1hZ2VLZXkwMDEuanBnIiwiZWRpdHMiOnsiZ3JheXNjYWxlIjoidHJ1ZSJ9fQ=='
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
       // Act
@@ -1045,7 +1072,10 @@ describe('parseImageBucket()', () => {
   describe('002/defaultRequestType/bucketSpecifiedInRequest/notAllowed', () => {
     it('Should throw an error if the bucket name is provided in the image request but has not been allowed in SOURCE_BUCKETS', () => {
       // Arrange
-      const event = { path: '/eyJidWNrZXQiOiJhbGxvd2VkQnVja2V0MDAxIiwia2V5Ijoic2FtcGxlSW1hZ2VLZXkwMDEuanBnIiwiZWRpdHMiOnsiZ3JheXNjYWxlIjoidHJ1ZSJ9fQ==' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJhbGxvd2VkQnVja2V0MDAxIiwia2V5Ijoic2FtcGxlSW1hZ2VLZXkwMDEuanBnIiwiZWRpdHMiOnsiZ3JheXNjYWxlIjoidHJ1ZSJ9fQ=='
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket003, allowedBucket004';
 
       // Act
@@ -1067,7 +1097,10 @@ describe('parseImageBucket()', () => {
   describe('003/defaultRequestType/bucketNotSpecifiedInRequest', () => {
     it('Should pass if the image request does not contain a source bucket but SOURCE_BUCKETS contains at least one bucket that can be used as a default', () => {
       // Arrange
-      const event = { path: '/eyJrZXkiOiJzYW1wbGVJbWFnZUtleTAwMS5qcGciLCJlZGl0cyI6eyJncmF5c2NhbGUiOiJ0cnVlIn19==' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJrZXkiOiJzYW1wbGVJbWFnZUtleTAwMS5qcGciLCJlZGl0cyI6eyJncmF5c2NhbGUiOiJ0cnVlIn19=='
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
       // Act
@@ -1083,7 +1116,10 @@ describe('parseImageBucket()', () => {
   describe('004/thumborRequestType', () => {
     it('Should pass if there is at least one SOURCE_BUCKET specified that can be used as the default for Thumbor requests', () => {
       // Arrange
-      const event = { path: '/filters:grayscale()/test-image-001.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:grayscale()/test-image-001.jpg'
+      };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
       // Act
@@ -1099,7 +1135,10 @@ describe('parseImageBucket()', () => {
   describe('005/customRequestType', () => {
     it('Should pass if there is at least one SOURCE_BUCKET specified that can be used as the default for Custom requests', () => {
       // Arrange
-      const event = { path: '/filters:grayscale()/test-image-001.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:grayscale()/test-image-001.jpg'
+      };
 
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
@@ -1117,7 +1156,8 @@ describe('parseImageBucket()', () => {
     it('Should pass if there is at least one SOURCE_BUCKET specified that can be used as the default for Custom requests', () => {
       // Arrange
       const event = {
-        path: '/filters:grayscale()/test-image-001.jpg'
+        ...defaultEvent,
+        rawPath: '/filters:grayscale()/test-image-001.jpg'
       };
       process.env.SOURCE_BUCKETS = 'allowedBucket001, allowedBucket002';
 
@@ -1155,7 +1195,10 @@ describe('parseImageEdits()', () => {
   describe('001/defaultRequestType', () => {
     it('Should pass if the proper result is returned for a sample base64-encoded image request', () => {
       // Arrange
-      const event = { path: '/eyJlZGl0cyI6eyJncmF5c2NhbGUiOiJ0cnVlIiwicm90YXRlIjo5MCwiZmxpcCI6InRydWUifX0=' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJlZGl0cyI6eyJncmF5c2NhbGUiOiJ0cnVlIiwicm90YXRlIjo5MCwiZmxpcCI6InRydWUifX0='
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1174,7 +1217,10 @@ describe('parseImageEdits()', () => {
   describe('002/thumborRequestType', () => {
     it('Should pass if the proper result is returned for a sample thumbor-type image request', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1192,7 +1238,10 @@ describe('parseImageEdits()', () => {
   describe('003/customRequestType', () => {
     it('Should pass if the proper result is returned for a sample custom-type image request', () => {
       // Arrange
-      const event = { path: '/filters-rotate(90)/filters-grayscale()/thumbor-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters-rotate(90)/filters-grayscale()/thumbor-image.jpg'
+      };
 
       process.env = {
         REWRITE_MATCH_PATTERN: '/(filters-)/gm',
@@ -1215,7 +1264,10 @@ describe('parseImageEdits()', () => {
   describe('004/customRequestType', () => {
     it('Should throw an error if a requestType is not specified and/or the image edits cannot be parsed', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/other-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/other-image.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1251,7 +1303,10 @@ describe('parseImageKey()', () => {
   describe('001/defaultRequestType', () => {
     it('Should pass if an image key value is provided in the default request format', () => {
       // Arrange
-      const event = { path: '/eyJidWNrZXQiOiJteS1zYW1wbGUtYnVja2V0Iiwia2V5Ijoic2FtcGxlLWltYWdlLTAwMS5qcGcifQ==' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJteS1zYW1wbGUtYnVja2V0Iiwia2V5Ijoic2FtcGxlLWltYWdlLTAwMS5qcGcifQ=='
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1266,7 +1321,8 @@ describe('parseImageKey()', () => {
   describe('002/defaultRequestType/withSlashRequest', () => {
     it('should read image requests with base64 encoding having slash', () => {
       const event = {
-        path: '/eyJidWNrZXQiOiJlbGFzdGljYmVhbnN0YWxrLXVzLWVhc3QtMi0wNjY3ODQ4ODU1MTgiLCJrZXkiOiJlbnYtcHJvZC9nY2MvbGFuZGluZ3BhZ2UvMV81N19TbGltTl9MaWZ0LUNvcnNldC1Gb3ItTWVuLVNOQVAvYXR0YWNobWVudHMvZmZjMWYxNjAtYmQzOC00MWU4LThiYWQtZTNhMTljYzYxZGQzX1/Ys9mE2YrZhSDZhNmK2YHYqiAoMikuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo0ODAsImZpdCI6ImNvdmVyIn19fQ=='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJlbGFzdGljYmVhbnN0YWxrLXVzLWVhc3QtMi0wNjY3ODQ4ODU1MTgiLCJrZXkiOiJlbnYtcHJvZC9nY2MvbGFuZGluZ3BhZ2UvMV81N19TbGltTl9MaWZ0LUNvcnNldC1Gb3ItTWVuLVNOQVAvYXR0YWNobWVudHMvZmZjMWYxNjAtYmQzOC00MWU4LThiYWQtZTNhMTljYzYxZGQzX1/Ys9mE2YrZhSDZhNmK2YHYqiAoMikuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjo0ODAsImZpdCI6ImNvdmVyIn19fQ=='
       };
 
       // Act
@@ -1282,7 +1338,10 @@ describe('parseImageKey()', () => {
   describe('003/thumborRequestType', () => {
     it('Should pass if an image key value is provided in the thumbor request format', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1297,7 +1356,10 @@ describe('parseImageKey()', () => {
   describe('004/thumborRequestType/withParenthesesRequest', () => {
     it('Should pass if an image key value is provided in the thumbor request format having open, close parentheses', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1).jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1).jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1310,7 +1372,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request format having open parentheses', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1323,7 +1388,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request format having close parentheses', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image 1).jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image 1).jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1336,7 +1404,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request format having close parentheses in the middle of the name', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1349,7 +1420,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request and the path has crop filter', () => {
       // Arrange
-      const event = { path: '/10x10:100x100/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/10x10:100x100/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1362,7 +1436,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request and the path has resize filter', () => {
       // Arrange
-      const event = { path: '/10x10/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/10x10/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1375,7 +1452,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request and the path has crop and resize filters', () => {
       // Arrange
-      const event = { path: '/10x20:100x200/10x10/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/10x20:100x200/10x10/filters:rotate(90)/filters:grayscale()/thumbor-image (1) suffix.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1388,7 +1468,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if an image key value is provided in the thumbor request and the key string has substring "fit-in"', () => {
       // Arrange
-      const event = { path: '/fit-in/400x0/filters:fill(ffffff)/fit-in-thumbor-image (1) suffix.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/fit-in/400x0/filters:fill(ffffff)/fit-in-thumbor-image (1) suffix.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1401,7 +1484,10 @@ describe('parseImageKey()', () => {
 
     it('Should pass if the image in the sub-directory', () => {
       // Arrange
-      const event = { path: '/100x100/test-100x100/test/beach-100x100.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/100x100/test-100x100/test/beach-100x100.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1416,7 +1502,10 @@ describe('parseImageKey()', () => {
   describe('005/customRequestType', () => {
     it('Should pass if an image key value is provided in the custom request format', () => {
       // Arrange
-      const event = { path: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg'
+      };
 
       process.env = {
         REWRITE_MATCH_PATTERN: '/(filters-)/gm',
@@ -1436,7 +1525,10 @@ describe('parseImageKey()', () => {
   describe('006/customRequestStringType', () => {
     it('Should pass if an image key value is provided in the custom request format', () => {
       // Arrange
-      const event = { path: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters-rotate(90)/filters-grayscale()/custom-image.jpg'
+      };
 
       process.env = {
         REWRITE_MATCH_PATTERN: '/(filters-)/gm',
@@ -1456,7 +1548,10 @@ describe('parseImageKey()', () => {
   describe('007/elseCondition', () => {
     it('Should throw an error if an unrecognized requestType is passed into the function as a parameter', () => {
       // Arrange
-      const event = { path: '/filters:rotate(90)/filters:grayscale()/other-image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/filters:rotate(90)/filters:grayscale()/other-image.jpg'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1492,7 +1587,10 @@ describe('parseRequestType()', () => {
   describe('001/defaultRequestType', () => {
     it('Should pass if the method detects a default request', () => {
       // Arrange
-      const event = { path: '/eyJidWNrZXQiOiJteS1zYW1wbGUtYnVja2V0Iiwia2V5IjoibXktc2FtcGxlLWtleSIsImVkaXRzIjp7ImdyYXlzY2FsZSI6dHJ1ZX19' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJteS1zYW1wbGUtYnVja2V0Iiwia2V5IjoibXktc2FtcGxlLWtleSIsImVkaXRzIjp7ImdyYXlzY2FsZSI6dHJ1ZX19'
+      };
       process.env = {};
 
       // Act
@@ -1509,7 +1607,8 @@ describe('parseRequestType()', () => {
     it('Should pass if the method detects a thumbor request', () => {
       // Arrange
       const event = {
-        path: '/unsafe/filters:brightness(10):contrast(30)/https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Coffee_berries_1.jpg/1200px-Coffee_berries_1.jpg'
+        ...defaultEvent,
+        rawPath: '/unsafe/filters:brightness(10):contrast(30)/https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Coffee_berries_1.jpg/1200px-Coffee_berries_1.jpg'
       };
       process.env = {};
 
@@ -1526,7 +1625,10 @@ describe('parseRequestType()', () => {
   describe('003/customRequestType', () => {
     it('Should pass if the method detects a custom request', () => {
       // Arrange
-      const event = { path: '/additionalImageRequestParameters/image.jpg' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/additionalImageRequestParameters/image.jpg'
+      };
       process.env = {
         REWRITE_MATCH_PATTERN: 'matchPattern',
         REWRITE_SUBSTITUTION: 'substitutionString'
@@ -1545,7 +1647,10 @@ describe('parseRequestType()', () => {
   describe('004/elseCondition', () => {
     it('Should throw an error if the method cannot determine the request type based on the three groups given', () => {
       // Arrange
-      const event = { path: '12x12e24d234r2ewxsad123d34r.bmp' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '12x12e24d234r2ewxsad123d34r.bmp'
+      };
 
       process.env = {};
 
@@ -1575,7 +1680,8 @@ describe('parseImageHeaders()', () => {
   it('001/Should return headers if headers are provided for a sample base64-encoded image request', () => {
     // Arrange
     const event = {
-      path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiaGVhZGVycyI6eyJDYWNoZS1Db250cm9sIjoibWF4LWFnZT0zMTUzNjAwMCxwdWJsaWMifSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
+      ...defaultEvent,
+      rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5IiwiaGVhZGVycyI6eyJDYWNoZS1Db250cm9sIjoibWF4LWFnZT0zMTUzNjAwMCxwdWJsaWMifSwib3V0cHV0Rm9ybWF0IjoianBlZyJ9'
     };
 
     // Act
@@ -1591,7 +1697,10 @@ describe('parseImageHeaders()', () => {
 
   it('001/Should return undefined if headers are not provided for a base64-encoded image request', () => {
     // Arrange
-    const event = { path: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5In0=' };
+    const event = {
+      ...defaultEvent,
+      rawPath: '/eyJidWNrZXQiOiJ2YWxpZEJ1Y2tldCIsImtleSI6InZhbGlkS2V5In0='
+    };
 
     // Act
     const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1603,7 +1712,10 @@ describe('parseImageHeaders()', () => {
 
   it('001/Should return undefined for Thumbor or Custom requests', () => {
     // Arrange
-    const event = { path: '/test.jpg' };
+    const event = {
+      ...defaultEvent,
+      rawPath: '/test.jpg'
+    };
 
     // Act
     const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1622,7 +1734,10 @@ describe('decodeRequest()', () => {
   describe('001/validRequestPathSpecified', () => {
     it('Should pass if a valid base64-encoded path has been specified', () => {
       // Arrange
-      const event = { path: '/eyJidWNrZXQiOiJidWNrZXQtbmFtZS1oZXJlIiwia2V5Ijoia2V5LW5hbWUtaGVyZSJ9' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJidWNrZXQtbmFtZS1oZXJlIiwia2V5Ijoia2V5LW5hbWUtaGVyZSJ9'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1640,7 +1755,10 @@ describe('decodeRequest()', () => {
   describe('002/invalidRequestPathSpecified', () => {
     it('Should throw an error if a valid base64-encoded path has not been specified', () => {
       // Arrange
-      const event = { path: '/someNonBase64EncodedContentHere' };
+      const event = {
+        ...defaultEvent,
+        rawPath: '/someNonBase64EncodedContentHere'
+      };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1662,7 +1780,7 @@ describe('decodeRequest()', () => {
   describe('003/noPathSpecified', () => {
     it('Should throw an error if no path is specified at all', () => {
       // Arrange
-      const event = {};
+      const event = { ...defaultEvent };
 
       // Act
       const imageRequest = new ImageRequest(s3Client, secretProvider);
@@ -1742,6 +1860,7 @@ describe('getOutputFormat()', () => {
     it('Should pass if it returns "webp" for an accepts header which includes webp', () => {
       // Arrange
       const event = {
+        ...defaultEvent,
         headers: {
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3'
         }
@@ -1761,6 +1880,7 @@ describe('getOutputFormat()', () => {
     it('Should pass if it returns null for an accepts header which does not include webp', () => {
       // Arrange
       const event = {
+        ...defaultEvent,
         headers: {
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/apng,*/*;q=0.8,application/signed-exchange;v=b3'
         }
@@ -1780,6 +1900,7 @@ describe('getOutputFormat()', () => {
     it('Should pass if it returns null when AUTO_WEBP is disabled with accepts header including webp', () => {
       // Arrange
       const event = {
+        ...defaultEvent,
         headers: {
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3'
         }
@@ -1799,6 +1920,7 @@ describe('getOutputFormat()', () => {
     it('Should pass if it returns null when AUTO_WEBP is not set with accepts header including webp', () => {
       // Arrange
       const event = {
+        ...defaultEvent,
         headers: {
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3'
         }

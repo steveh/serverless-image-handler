@@ -196,10 +196,10 @@ export class ImageRequest {
       return decoded.edits;
     } else if (requestType === RequestTypes.THUMBOR) {
       const thumborMapping = new ThumborMapper();
-      return thumborMapping.mapPathToEdits(event.path);
+      return thumborMapping.mapPathToEdits(event.rawPath);
     } else if (requestType === RequestTypes.CUSTOM) {
       const thumborMapping = new ThumborMapper();
-      const parsedPath = thumborMapping.parseCustomPath(event.path);
+      const parsedPath = thumborMapping.parseCustomPath(event.rawPath);
       return thumborMapping.mapPathToEdits(parsedPath);
     } else {
       throw new ImageHandlerError(
@@ -224,7 +224,7 @@ export class ImageRequest {
     }
 
     if (requestType === RequestTypes.THUMBOR || requestType === RequestTypes.CUSTOM) {
-      let { path } = event;
+      let { rawPath } = event;
 
       if (requestType === RequestTypes.CUSTOM) {
         const { REWRITE_MATCH_PATTERN, REWRITE_SUBSTITUTION } = process.env;
@@ -235,13 +235,13 @@ export class ImageRequest {
           const parsedPatternString = REWRITE_MATCH_PATTERN.slice(1, REWRITE_MATCH_PATTERN.length - 1 - flags.length);
           const regExp = new RegExp(parsedPatternString, flags);
 
-          path = path.replace(regExp, REWRITE_SUBSTITUTION);
+          rawPath = rawPath.replace(regExp, REWRITE_SUBSTITUTION);
         } else {
-          path = path.replace(REWRITE_MATCH_PATTERN, REWRITE_SUBSTITUTION);
+          rawPath = rawPath.replace(REWRITE_MATCH_PATTERN, REWRITE_SUBSTITUTION);
         }
       }
 
-      return decodeURIComponent(path.replace(/\/\d+x\d+:\d+x\d+\/|(?<=\/)\d+x\d+\/|filters:[^/]+|\/fit-in(?=\/)|^\/+/g, '').replace(/^\/+/, ''));
+      return decodeURIComponent(rawPath.replace(/\/\d+x\d+:\d+x\d+\/|(?<=\/)\d+x\d+\/|filters:[^/]+|\/fit-in(?=\/)|^\/+/g, '').replace(/^\/+/, ''));
     }
 
     // Return an error for all other conditions
@@ -259,7 +259,7 @@ export class ImageRequest {
    * @returns The request type.
    */
   public parseRequestType(event: ImageHandlerEvent): RequestTypes {
-    const { path } = event;
+    const { rawPath } = event;
     const matchDefault = /^(\/?)([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
     const matchThumbor = /^(\/?)((fit-in)?|(filters:.+\(.?\))?|(unsafe)?)(((.(?!(\.[^.\\/]+$)))*$)|.*(\.jpg$|.\.png$|\.webp$|\.tiff$|\.jpeg$|\.svg$))/i;
     const { REWRITE_MATCH_PATTERN, REWRITE_SUBSTITUTION } = process.env;
@@ -274,13 +274,13 @@ export class ImageRequest {
       isBase64Encoded = false;
     }
 
-    if (matchDefault.test(path) && isBase64Encoded) {
+    if (matchDefault.test(rawPath) && isBase64Encoded) {
       // use sharp
       return RequestTypes.DEFAULT;
     } else if (definedEnvironmentVariables) {
       // use rewrite function then thumbor mappings
       return RequestTypes.CUSTOM;
-    } else if (matchThumbor.test(path)) {
+    } else if (matchThumbor.test(rawPath)) {
       // use thumbor mappings
       return RequestTypes.THUMBOR;
     } else {
@@ -314,10 +314,10 @@ export class ImageRequest {
    * @returns The decoded from base-64 image request.
    */
   public decodeRequest(event: ImageHandlerEvent): DefaultImageRequest {
-    const { path } = event;
+    const { rawPath } = event;
 
-    if (path) {
-      const encoded = path.charAt(0) === '/' ? path.slice(1) : path;
+    if (rawPath) {
+      const encoded = rawPath.charAt(0) === '/' ? rawPath.slice(1) : rawPath;
       const toBuffer = Buffer.from(encoded, 'base64');
       try {
         // To support European characters, 'ascii' was removed.
@@ -417,7 +417,7 @@ export class ImageRequest {
 
     // Checks signature enabled
     if (ENABLE_SIGNATURE === 'Yes') {
-      const { path, queryStringParameters } = event;
+      const { rawPath, queryStringParameters } = event;
 
       if (!queryStringParameters?.signature) {
         throw new ImageHandlerError(StatusCodes.BAD_REQUEST, 'AuthorizationQueryParametersError', 'Query-string requires the signature parameter.');
@@ -427,7 +427,7 @@ export class ImageRequest {
         const { signature } = queryStringParameters;
         const secret = JSON.parse(await this.secretProvider.getSecret(SECRETS_MANAGER));
         const key = secret[SECRET_KEY];
-        const hash = createHmac('sha256', key).update(path).digest('hex');
+        const hash = createHmac('sha256', key).update(rawPath).digest('hex');
 
         // Signature should be made with the full path.
         if (signature !== hash) {

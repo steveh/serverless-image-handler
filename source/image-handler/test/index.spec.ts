@@ -1,9 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { mockAwsS3 } from './mock';
+import { mockAwsS3, defaultEvent } from './mock';
 import { handler } from '../index';
 import { ImageHandlerError, ImageHandlerEvent, StatusCodes } from '../lib';
+import { APIGatewayEventRequestContextV2 } from 'aws-lambda';
 
 describe('index', () => {
   // Arrange
@@ -26,7 +27,10 @@ describe('index', () => {
 
     it('001/should return the image when there is no error', async () => {
       // Arrange
-      const event: ImageHandlerEvent = { path: '/test.jpg' };
+      const event: ImageHandlerEvent = {
+        ...defaultEvent,
+        rawPath: '/test.jpg'
+      };
 
       // Act
       const result = await handler(event);
@@ -53,7 +57,8 @@ describe('index', () => {
     it('002/should return the image with custom headers when custom headers are provided', async () => {
       // Arrange
       const event: ImageHandlerEvent = {
-        path: '/eyJidWNrZXQiOiJzb3VyY2UtYnVja2V0Iiwia2V5IjoidGVzdC5qcGciLCJoZWFkZXJzIjp7IkN1c3RvbS1IZWFkZXIiOiJDdXN0b21WYWx1ZSJ9fQ=='
+        ...defaultEvent,
+        rawPath: '/eyJidWNrZXQiOiJzb3VyY2UtYnVja2V0Iiwia2V5IjoidGVzdC5qcGciLCJoZWFkZXJzIjp7IkN1c3RvbS1IZWFkZXIiOiJDdXN0b21WYWx1ZSJ9fQ=='
       };
 
       // Act
@@ -82,10 +87,8 @@ describe('index', () => {
     it('003/should return the image when the request is from ALB', async () => {
       // Arrange
       const event: ImageHandlerEvent = {
-        path: '/test.jpg',
-        requestContext: {
-          elb: {}
-        }
+        ...defaultEvent,
+        rawPath: '/test.jpg'
       };
 
       // Act
@@ -96,6 +99,7 @@ describe('index', () => {
         headers: {
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Credentials': true,
           'Content-Type': 'image/jpeg',
           Expires: undefined,
           'Cache-Control': 'max-age=31536000,public',
@@ -113,7 +117,11 @@ describe('index', () => {
   describe('TC: Error', () => {
     it('001/should return an error JSON when an error occurs', async () => {
       // Arrange
-      const event: ImageHandlerEvent = { path: '/test.jpg' };
+      const event: ImageHandlerEvent = {
+        ...defaultEvent,
+        rawPath: '/test.jpg'
+      };
+
       // Mock
       mockAwsS3.getObject.mockImplementationOnce(() => ({
         promise() {
@@ -147,7 +155,8 @@ describe('index', () => {
     it('002/should return 500 error when there is no error status in the error', async () => {
       // Arrange
       const event: ImageHandlerEvent = {
-        path: 'eyJidWNrZXQiOiJzb3VyY2UtYnVja2V0Iiwia2V5IjoidGVzdC5qcGciLCJlZGl0cyI6eyJ3cm9uZ0ZpbHRlciI6dHJ1ZX19'
+        ...defaultEvent,
+        rawPath: 'eyJidWNrZXQiOiJzb3VyY2UtYnVja2V0Iiwia2V5IjoidGVzdC5qcGciLCJlZGl0cyI6eyJ3cm9uZ0ZpbHRlciI6dHJ1ZX19'
       };
 
       // Mock
@@ -191,7 +200,8 @@ describe('index', () => {
       process.env.CORS_ENABLED = 'Yes';
       process.env.CORS_ORIGIN = '*';
       const event: ImageHandlerEvent = {
-        path: '/test.jpg'
+        ...defaultEvent,
+        rawPath: '/test.jpg'
       };
 
       // Mock
@@ -237,7 +247,8 @@ describe('index', () => {
     it('004/should return an error JSON when getting the default fallback image fails if the default fallback image is enabled', async () => {
       // Arrange
       const event: ImageHandlerEvent = {
-        path: '/test.jpg'
+        ...defaultEvent,
+        rawPath: '/test.jpg'
       };
 
       // Mock
@@ -277,7 +288,8 @@ describe('index', () => {
       // Arrange
       process.env.DEFAULT_FALLBACK_IMAGE_KEY = '';
       const event: ImageHandlerEvent = {
-        path: '/test.jpg'
+        ...defaultEvent,
+        rawPath: '/test.jpg'
       };
 
       // Mock
@@ -315,7 +327,8 @@ describe('index', () => {
       // Arrange
       process.env.DEFAULT_FALLBACK_IMAGE_BUCKET = '';
       const event: ImageHandlerEvent = {
-        path: '/test.jpg'
+        ...defaultEvent,
+        rawPath: '/test.jpg'
       };
 
       // Mock
@@ -353,10 +366,8 @@ describe('index', () => {
   it('007/should return an error JSON when ALB request is failed', async () => {
     // Arrange
     const event: ImageHandlerEvent = {
-      path: '/test.jpg',
-      requestContext: {
-        elb: {}
-      }
+      ...defaultEvent,
+      rawPath: '/test.jpg'
     };
 
     // Mock
@@ -375,6 +386,7 @@ describe('index', () => {
         'Access-Control-Allow-Methods': 'GET',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
